@@ -1,0 +1,6 @@
+# IDE config
+.idea/
+AStar--Java.iml
+
+# Debug
+out/
