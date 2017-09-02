@@ -11,28 +11,35 @@ import java.io.IOException;
 public class BmpViewerFrame extends JFrame {
     // 展示图片
     private BmpPanel bmpViewerPanel = null;
+
     // 文件选择器
     private JFileChooser fileChooser = null;
-    // 默认宽度
-    private static final int DEFAULT_WIDTH = 600;
-    // 默认长度
-    private static final int DEFAULT_HEIGHT = 600;
+
+    // 窗口的宽高度，从 BMP 读取数据后
+    // 默认为 20
+    private int frameWidth = 60;
+    private int frameHeight = 60;
+
+    private BMPReader bmpReader = null;
 
     // 选取的 BMP 路径
     private String fileName = null;
 
     public BmpViewerFrame() {
         super();
-        setTitle("最优路径：A* 算法");
-        setSize(this.DEFAULT_WIDTH, this.DEFAULT_HEIGHT);
+        // 设置标题
+        this.setTitle("最优路径：A* 算法");
 
+        // 设置窗口大小
+        this.setSize(this.frameWidth, this.frameHeight);
 
         // Java 提供的文件选择框
         this.fileChooser = new JFileChooser();
-        // 设置当前浏览路径
+
+        // 设置选择框的默认路径为当前路径
         fileChooser.setCurrentDirectory(new File("."));
 
-        // 设置菜单
+        // 添加菜单
         JMenuBar menuBar = new JMenuBar();
         setJMenuBar(menuBar);
 
@@ -40,25 +47,32 @@ public class BmpViewerFrame extends JFrame {
         JMenu menu = new JMenu("操作");
         menuBar.add(menu);
 
-        // 选择图片
+        // 「选择图片」选项
         JMenuItem selectBmpItem = new JMenuItem("选择图片");
         menu.add(selectBmpItem);
         selectBmpItem.addActionListener(e -> {
-            // 后缀过滤，只能选择 BMP 文件
+            // 文件过滤，只能选择 BMP 文件
             FileNameExtensionFilter filter = new FileNameExtensionFilter("*.bmp", "bmp");
             fileChooser.setFileFilter(filter);
             fileChooser.setMultiSelectionEnabled(false);
 
             // 弹出文件选择对话框
             int result = fileChooser.showOpenDialog(null);
+            // 判断是否选择了文件
             if (result == JFileChooser.APPROVE_OPTION) {
                 fileName = fileChooser.getSelectedFile().getPath();
+                // 判断是否选择了 *.BMP 文件
                 if (!fileName.endsWith(".bmp")) {
                     JOptionPane.showMessageDialog(null, "图片类型错误！");
                 } else {
                     try {
-                        BMPReader reader = new BMPReader();
-                        freshBmpPanel(reader.readBMP(fileName));
+                        bmpReader = new BMPReader();
+                        int[][] bmpDate = bmpReader.readBMP(fileName);
+                        // 更新窗口大小，加上偏差
+                        this.frameWidth = bmpReader.getBmpWidth() + 20;
+                        this.frameHeight = bmpReader.getBmpHeight() + 65;
+                        // 刷新 Panel
+                        freshBmpPanel(bmpDate);
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
@@ -69,43 +83,28 @@ public class BmpViewerFrame extends JFrame {
 
         });
 
-        // 开始寻路算法
+        // 「开始寻路」选项
         JMenuItem startItem = new JMenuItem("开始寻路");
         menu.add(startItem);
         startItem.addActionListener(e -> {
-            if (fileName == null) {
-                JOptionPane.showMessageDialog(null, "未选择图片！！");
+            if (fileName == null || bmpReader == null) {
+                JOptionPane.showMessageDialog(null, "请选择图片！！");
             } else {
-                BMPReader reader = new BMPReader();
+
+                int[][] mazResult = null;
                 try {
-                    int[][] temp = reader.readBMP(fileName);
-                    int[][] date = new int[temp.length][temp[0].length];
-                    for (int i = 0; i < temp.length; i++) {
-                        for (int j = 0; j < temp[i].length; j++) {
-                            date[i][j] = temp[temp.length - 1 - i][j];
-                        }
-                    }
-
-                    int[][] result = new AStarCoreAlgorithm(date).start();
-                    int[][] date2 = new int[result.length][result[0].length];
-                    for (int i = 0; i < result.length; i++) {
-                        for (int j = 0; j < result[i].length; j++) {
-                            date2[i][j] = result[result.length - 1 - i][j];
-                        }
-                    }
-
-                    freshBmpPanel(date2);
-
-
-                } catch (IOException e1) {
+                    mazResult = new AStarCoreAlgorithm(bmpReader.getBmpDate()).start();
+                } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 }
+                freshBmpPanel(mazResult);
+
 
             }
 
         });
 
-        // 退出
+        // 「退出」选项
         JMenuItem exitItem = new JMenuItem("退出");
         menu.add(exitItem);
         exitItem.addActionListener(e -> System.exit(0));
@@ -146,6 +145,7 @@ public class BmpViewerFrame extends JFrame {
         }
         this.bmpViewerPanel = new BmpPanel(date);
         add(this.bmpViewerPanel);
+        setSize(this.frameWidth, this.frameHeight);
         this.invalidate();
         this.validate();
     }
