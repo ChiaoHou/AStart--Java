@@ -1,12 +1,5 @@
 # A* 算法，用 Java 实现
 
-用 Java 实现 A* 算法，步骤：
-
-1. 读取 BMP 数据
-2. 转换 BMP 数据为数组
-3. 进行算法
-4. 将数组翻转为 BMP 数据进行显示
-
 看结果：
 
 <div style="overflow-x:scroll">
